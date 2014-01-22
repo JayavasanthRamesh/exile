@@ -1,0 +1,12 @@
+{
+    "files": {
+        "a": "7d157d7c000ae27db146575c08ce30df893d3a64", 
+        "c": {
+            "h": "b408860bc2c0584b8e0bb6fa3443005a3ef39854"
+        }
+    }, 
+    "remote": {
+        "location": "/tmp/exile-test", 
+        "type": "local"
+    }
+}
