@@ -124,7 +124,9 @@ def add(paths):
 
 def clean(ignored):
     """Removes locally cached objects."""
+
     shutil.rmtree(cache_path)
+    exile.log.message("cache cleaned")
 
 try:
     # calls the local function with the same name as the action argument -- "add" calls add(paths)

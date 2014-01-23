@@ -1,2 +1,3 @@
 *.pyc
 .exile-cache
+.DS_Store
