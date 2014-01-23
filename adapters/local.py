@@ -13,18 +13,10 @@ class Communicator:
             raise RuntimeError("configured repository location is not a directory: " + self.__location)
 
     def get(self, hash, dest):
-        try:
-            shutil.copy(self.__repoPath(hash), dest)
-        except IOError:
-            return False
-        return True
+        shutil.copy(self.__repoPath(hash), dest)
 
     def put(self, source, hash):
-        try:
-            shutil.copy(source, self.__repoPath(hash))
-        except IOError:
-            return False
-        return True
+        shutil.copy(source, self.__repoPath(hash))
 
     def __repoPath(self, hash):
         return os.sep.join([self.__location, hash])

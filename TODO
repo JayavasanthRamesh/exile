@@ -1,3 +1,2 @@
  - AWS adapter
  - tests
- - configurable verboseness (warnings/errors/etc)
