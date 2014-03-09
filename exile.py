@@ -3,7 +3,6 @@
 import argparse
 import exile
 import hashlib
-import imp
 import json
 import os
 import shutil
@@ -32,17 +31,6 @@ def find_config():
 
     return os.path.join(curr, MANIFEST_NAME)
 
-def create_communicator(config):
-    """Factory for communicator objects based on the configured type."""
-
-    type = config['type']
-
-    # finds the module (python file) with the same name as the specified type in the "adapters" directory and loads it
-    file, path, desc = imp.find_module(type, [os.path.join(os.path.dirname(os.path.realpath(__file__)), 'adapters')])
-    comm_module = imp.load_module(type, file, path, desc)
-
-    return comm_module.Communicator(config)
-
 arg_parser = argparse.ArgumentParser(description="Add and resolve files stored in an exile repository.",
                                      formatter_class=argparse.RawTextHelpFormatter)
 arg_parser.add_argument("action", choices=['resolve', 'add', 'clean'],
@@ -63,7 +51,7 @@ try:
 
     # compute location of cache and create communicator
     cache_path = os.path.join(os.path.dirname(config_path), CACHE_DIR)
-    comm = exile.remote.CachedCommunicator(cache_path, create_communicator(config['remote']))
+    comm = exile.worker.AsyncCommunicator(cache_path, config['remote'])
 except Exception as e:
     exile.log.error(str(e))
 
@@ -131,5 +119,6 @@ def clean(ignored):
 try:
     # calls the local function with the same name as the action argument -- "add" calls add(paths)
     locals()[args.action](args.paths)
+    comm.join()
 except Exception as e:
     exile.log.error(str(e))
