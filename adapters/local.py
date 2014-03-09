@@ -4,7 +4,10 @@ import os.path
 
 class Communicator:
     def __init__(self, config):
-        self.__location = config['location']
+        try:
+            self.__location = config['location']
+        except KeyError as e:
+            raise Exception("missing required configuration: " + str(e))
 
         if not os.path.exists(self.__location):
             raise RuntimeError("configured repository location does not exist: " + self.__location)

@@ -37,9 +37,9 @@ class AsyncCommunicator:
     def __init__(self, cache_path, config):
         self.last_exception = None
         self.__queue = Queue.Queue()
-        comm = remote.CachedCommunicator(cache_path, create_communicator(config))
 
         for x in range(4):
+            comm = remote.CachedCommunicator(cache_path, create_communicator(config))
             t = threading.Thread(target=worker_main, args=(self.__queue, comm, self))
             t.daemon = True
             t.start()
