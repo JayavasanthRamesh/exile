@@ -1,4 +1,5 @@
 import sys
+import traceback
 
 # should be set by clients to the desired verbosity level
 verbosity = 2
@@ -15,6 +16,15 @@ def message(msg):
     if verbosity >= 1:
         print msg
 
-def error(msg):
-    print "error: " + msg
+def error(msg, trace=None):
+    if verbosity >= 3:
+        # generate a traceback if it came from this thread,
+        # otherwise the traceback should have been passed
+        tb = traceback.format_exc()
+        if tb != "None\n":
+            print tb
+        else:
+            print trace
+    else:
+        print "error: " + msg
     sys.exit(1)

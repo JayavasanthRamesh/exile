@@ -5,6 +5,7 @@ import os
 import Queue
 import remote
 import threading
+import traceback
 
 def create_communicator(config):
     """Factory for communicator objects based on the configured type."""
@@ -19,33 +20,50 @@ def create_communicator(config):
 
     return comm_module.Communicator(config)
 
-def worker_main(queue, comm):
-	while True:
-		work = queue.get()
-		log.info("worker processing item")
-		work["func"](comm, *work["args"])
-		queue.task_done()
+def worker_main(queue, comm, manager):
+    while manager.last_exception is None:
+        work = queue.get()
+        try:
+            log.info("worker processing item")
+            work["func"](comm, *work["args"])
+        except Exception as e:
+            manager.last_exception = (str(e), traceback.format_exc())
+        finally:
+            queue.task_done()
 
 class AsyncCommunicator:
     """Wrapper around the Communicator classes provided by adapters that distributes work across multiple threads."""
 
     def __init__(self, cache_path, config):
-    	self.__queue = Queue.Queue()
-    	comm = remote.CachedCommunicator(cache_path, create_communicator(config))
+        self.last_exception = None
+        self.__queue = Queue.Queue()
+        comm = remote.CachedCommunicator(cache_path, create_communicator(config))
 
-    	threads = min(4, multiprocessing.cpu_count())
-    	log.info("spawning %d worker threads" % (threads))
-    	for x in range(threads):
-    		t = threading.Thread(target=worker_main, args=(self.__queue, comm))
-    		t.daemon = True
-    		t.start()
+        for x in range(4):
+            t = threading.Thread(target=worker_main, args=(self.__queue, comm, self))
+            t.daemon = True
+            t.start()
 
+    def __checked(f):
+        def result(self, *args):
+            if self.last_exception is not None:
+                log.error(*self.last_exception)
+
+            f(self, *args)
+
+            if self.last_exception is not None:
+                log.error(*self.last_exception)
+        return result
+
+    @__checked
     def get(self, hash, dest):
-    	self.__queue.put( { "func": remote.CachedCommunicator.get, "args": (hash, dest) } )
+        self.__queue.put( { "func": remote.CachedCommunicator.get, "args": (hash, dest) } )
 
+    @__checked
     def put(self, source, hash):
-    	self.__queue.put( { "func": remote.CachedCommunicator.put, "args": (source, hash) } )
+        self.__queue.put( { "func": remote.CachedCommunicator.put, "args": (source, hash) } )
 
+    @__checked
     def join(self):
-    	log.info("waiting for work to complete")
-    	self.__queue.join()
+        log.info("waiting for work to complete")
+        self.__queue.join()

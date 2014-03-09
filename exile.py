@@ -74,6 +74,8 @@ def resolve(paths):
             filehash = filemap.get(relative)
             comm.get(filehash, relative)
 
+    comm.join()
+
 def add_file(path):
     """
     Add a single file. This only changes the parsed configuration, not the file.
@@ -105,6 +107,7 @@ def add(paths):
         else:
             exile.log.warning("path does not exist: " + path)
                 
+    comm.join()
 
     # update the config file
     with open(config_path, 'w') as file:
@@ -119,6 +122,5 @@ def clean(ignored):
 try:
     # calls the local function with the same name as the action argument -- "add" calls add(paths)
     locals()[args.action](args.paths)
-    comm.join()
 except Exception as e:
     exile.log.error(str(e))
