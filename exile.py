@@ -3,9 +3,11 @@
 import argparse
 import exile
 import hashlib
+import imp
 import json
 import os
 import shutil
+import sys
 
 MANIFEST_NAME = "exile.manifest"
 CACHE_DIR = ".exile.cache"
@@ -31,17 +33,57 @@ def find_config():
 
     return os.path.join(curr, MANIFEST_NAME)
 
+def init(type):
+    """
+    Create a blank manifest in the current directory populated with the template configuration for the specified remote type.
+
+    Args:
+        type: the remote type to initialize (must exist in adapters/)
+    """
+
+    if type is None:
+        exile.log.error("no remote type specified (use -t)")
+
+    # should throw exception
+    try:
+        exile.log.error("manifest already exists: " + find_config())
+    except RuntimeError as e:
+        pass
+
+    try:
+        file, path, desc = imp.find_module(type, [os.path.join(os.path.dirname(os.path.realpath(__file__)), 'adapters')])
+        comm_module = imp.load_module(type, file, path, desc)
+    except ImportError as e:
+        exile.log.error("no adapter for remote type: " + type)
+
+    template = getattr(comm_module, 'template', {})
+    if not hasattr(template, 'type'):
+        template['type'] = type
+
+    config = { "remote": template }
+    with open('exile.manifest', 'w') as file:
+        json.dump(config, file, indent=4, sort_keys=True)
+
+    exile.log.message("Initialized manifest with remote type '%s'" % (args.type))
+
+
 arg_parser = argparse.ArgumentParser(description="Add and resolve files stored in an exile repository.",
                                      formatter_class=argparse.RawTextHelpFormatter)
-arg_parser.add_argument("action", choices=['resolve', 'add', 'clean'],
-                        help="the action to perform\n  resolve copy paths from the repository\n  add     add new paths to the repository\n  clean   delete locally cached objects")
+arg_parser.add_argument("action", choices=['resolve', 'add', 'clean', 'init'],
+                        help="the action to perform\n  init    create a new manifest in the current directory\n  resolve copy paths from the repository\n  add     add new paths to the repository\n  clean   delete locally cached objects")
 arg_parser.add_argument("paths", nargs='*',
                         help="the paths to which the action applies")
+arg_parser.add_argument("-t", "--type",
+                        help="when used with 'init', specifies the type of remote to configure")
 arg_parser.add_argument("-v", "--verbosity", type=int, default=2,
                         help="the amount of informational output to produce\n  0: only errors\n  1: + normal output\n  2: + warnings (default)\n  3: + informational notes")
 args = arg_parser.parse_args()
 
 exile.log.verbosity = args.verbosity
+
+if args.action == "init":
+    init(args.type)
+    sys.exit(0)
 
 try:
     # load an parse configuration file
@@ -109,7 +151,7 @@ def add(paths):
                 
     comm.join()
 
-    # update the config file
+    # update the manifest file
     with open(config_path, 'w') as file:
         json.dump(config, file, indent=4, sort_keys=True)
 

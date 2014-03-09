@@ -4,6 +4,13 @@ import os.path
 import shutil
 import tempfile
 
+template = {
+    "id": "<Access Key ID>",
+    "secret": "<Secret Access Key>",
+    "bucket": "mybucket",
+    "encrypt": False
+}
+
 class Communicator:
     def __init__(self, config):
         try:

@@ -2,6 +2,10 @@ import shutil
 import os
 import os.path
 
+template = {
+    "location": "/path/to/repo"
+}
+
 class Communicator:
     def __init__(self, config):
         try:
