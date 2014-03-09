@@ -42,6 +42,21 @@ methods, according the the following template:
             """
             pass
 
+It is also recommended that each adapter module contain a variable named
+'template' that contains all the configuration values used by the adapter.
+This is used by the `init` command to populate a manifest template.
+
+For example, the template for the S3 adapter is as follows:
+
+```python
+template = {
+    "id": "<Access Key ID>",
+    "secret": "<Secret Access Key>",
+    "bucket": "mybucket",
+    "encrypt": False
+}
+```
+
 Configuration
 -------------
 
