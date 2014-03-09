@@ -1,3 +1,4 @@
 *.pyc
 .exile-cache
 .DS_Store
+test/data
