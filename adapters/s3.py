@@ -13,9 +13,10 @@ class Communicator:
         self.__id = config['id']
         self.__secret = config['secret']
         self.__bucket = config['bucket']
-
         # unique key under which we can cache our connection to the S3 bucket
         self.__key = hashlib.sha1(self.__id + self.__secret + self.__bucket).hexdigest()
+
+        self.__encrypt = config['encrypt']
 
     def get(self, hash, dest):
         key = self.__get_key(hash)
@@ -25,7 +26,7 @@ class Communicator:
         shutil.move(tmp, dest)
 
     def put(self, source, hash):
-        self.__get_key(hash).set_contents_from_filename(source)
+        self.__get_key(hash).set_contents_from_filename(source, encrypt_key=self.__encrypt)
 
     def __get_key(self, hash):
         # each thread uses its own connection, cached to thread-local storage
