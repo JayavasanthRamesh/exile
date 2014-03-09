@@ -21,7 +21,24 @@ $ exile.py resolve a
 resolving: a
 $ cat a
 a
+$ cat exile.manifest
+{
+    "files": {
+        "a": "3f786850e387550fdab836ed7e6dc881de23001b"
+    },
+    "remote": {
+        "location": "/tmp/exile-test",
+        "type": "local"
+    }
+}
 ```
+
+Adapters
+--------
+
+`exile` communicates with the datastore of your choice via adapters. These are just simple Python modules that provide access into the protocol of your choice. Adapters for [S3](http://aws.amazon.com/s3/) and local datastores are supported out of the box.
+
+See [`adapters/`](adapters/README.md) for more information on writing new adapters.
 
 Commands
 --------
