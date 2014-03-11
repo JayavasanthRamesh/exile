@@ -60,3 +60,10 @@ Pull files from the remote repository into your local workspace. If the necessar
 ### clean
 
 `exile` maintains a local cache of all objects moving to and from the remote repository in order to prevent unnecessary network requests when switching between versions. This cache lives in the `.exile.cache` directory in the same location as your manifest file. The `clean` command is just a convenient way to clear this cache.
+
+Backstory
+---------
+
+`exile` was designed after using [git-exile](https://github.com/patstam/git-exile) on a large project for a few months. It quickly became clear that it would be incredibly difficult to use Git's clean and smudge filters and maintain acceptable performance across platforms. Several problems, primarily the necessity of each filter execution spinning up a new process and the frequency at which Git calls these filters (even for `status`) meant that the solution simply wasn't performant with any sizable number of exiled files.
+
+`exile` has been designed to be used *alongside* Git instead of depending on it directly and has performance as one of its main design goals.
