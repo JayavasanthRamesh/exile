@@ -60,35 +60,34 @@ class AsyncCommunicator:
             finally:
                 self.__queue.task_done()
 
-    def __checked(f):
-        """
-        Decorates a method to check for exceptions before and after
-        execution, logging an error if found.
-        """
+    def __check_error(self):
+        if self.__last_exception is not None:
+            log.error(*self.__last_exception)
 
-        def result(self, *args):
-            if self.__last_exception is not None:
-                log.error(*self.__last_exception)
+    def __add_task(self, task):
+        full = True
+        while full:
+            try:
+                self.__check_error()
+                self.__queue.put(item=task, timeout=0.5)
+                full = False
+            except Queue.Full as e:
+                pass
 
-            f(self, *args)
+        self.__check_error()
 
-            if self.__last_exception is not None:
-                log.error(*self.__last_exception)
-        return result
-
-    @__checked
     def get(self, hash, dest):
-        self.__queue.put( { "func": remote.CachedCommunicator.get, "args": (hash, dest) } )
+        self.__add_task( { "func": remote.CachedCommunicator.get, "args": (hash, dest) } )
 
-    @__checked
     def put(self, source, hash):
-        self.__queue.put( { "func": remote.CachedCommunicator.put, "args": (source, hash) } )
+        self.__add_task( { "func": remote.CachedCommunicator.put, "args": (source, hash) } )
 
-    @__checked
     def join(self):
         """
         Blocks until all asynchronous get and put operations have finished.
         """
 
+        self.__check_error()
         log.info("waiting for work to complete")
         self.__queue.join()
+        self.__check_error()
