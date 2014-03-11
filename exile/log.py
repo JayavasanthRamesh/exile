@@ -4,6 +4,20 @@ import traceback
 # should be set by clients to the desired verbosity level
 verbosity = 2
 
+# prevent buf
+class Unbuffered(object):
+   def __init__(self, stream):
+       self.stream = stream
+
+   def write(self, data):
+       self.stream.write(data)
+       self.stream.flush()
+
+   def __getattr__(self, attr):
+       return getattr(self.stream, attr)
+
+sys.stdout = Unbuffered(sys.stdout)
+
 def info(msg):
     if verbosity >= 3:
         print "info: " + msg
