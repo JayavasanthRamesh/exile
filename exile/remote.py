@@ -5,11 +5,14 @@ class CachedCommunicator:
     """Wrapper around the Communicator classes provided by adapters, but maintains a local cache."""
 
     def __init__(self, cache_path, communicator):
-        if os.path.exists(cache_path):
-            if not os.path.isdir(cache_path):
-                raise RuntimeError('cache is not a directory, please remove it: ' + cache_path)
-        else:
+        if os.path.exists(cache_path) and not os.path.isdir(cache_path):
+            raise RuntimeError('cache is not a directory, please remove it: ' + cache_path)
+
+        # create if it doesn't exist
+        try:
             os.mkdir(cache_path)
+        except OSError:
+            pass
 
         self.__cache = cache_path
         self.__comm = communicator
