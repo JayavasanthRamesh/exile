@@ -1,2 +1,3 @@
 from test_add import AddTest
-from test_resolve import ResolveTest
+from test_resolve import BasicResolveTest
+from test_resolve import SubDirResolveTest

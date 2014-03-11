@@ -26,6 +26,7 @@ class ResolveTest(ExileTest):
             self.assertEqual(file.read(), contents)
         self.assertInCache(hashlib.sha1(contents).hexdigest())
 
+class BasicResolveTest(ResolveTest):
     def test_all(self):
         self.exile('resolve *')
         for path, contents in self._files.iteritems():
@@ -35,3 +36,20 @@ class ResolveTest(ExileTest):
         path, contents = self._files.items()[0]
         self.exile('resolve ' + path)
         self.assertResolved(path, contents)
+
+class SubDirResolveTest(ResolveTest):
+    def setUp(self):
+        self._files = {
+            'dir/a': 'a',
+            'dir/b': 'b'
+        }
+        super(SubDirResolveTest, self).setUp()
+        
+        for path, _ in self._files.iteritems():
+            os.remove(path)
+
+    def test_resolve(self):
+        os.chdir('dir')
+        self.exile('resolve a b')
+        for path, contents in self._files.iteritems():
+            self.assertResolved(path, contents)

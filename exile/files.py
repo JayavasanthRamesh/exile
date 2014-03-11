@@ -103,7 +103,9 @@ class FileMapping:
             warning("path is not tracked: " + path)
             return []
 
-        return self.__paths(os.path.join(*parts), value)
+        # paths in "parts" are relative to the repo root, but we want absolute paths
+        absolute = os.path.realpath(os.path.join(os.path.relpath(self.__root), *parts))
+        return self.__paths(absolute, value)
 
     def add(self, path, hash):
         """
