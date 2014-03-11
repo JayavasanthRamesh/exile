@@ -34,19 +34,21 @@ class AsyncCommunicator:
 
         # start all worker threads
         for x in range(THREAD_COUNT):
-            comm = remote.CachedCommunicator(cache_path, create_communicator(config))
-            t = threading.Thread(target=AsyncCommunicator.__worker_main, args=(self, comm))
+            t = threading.Thread(target=AsyncCommunicator.__worker_main, args=(self, cache_path, config))
             t.daemon = True
             t.start()
 
-    def __worker_main(self, comm):
+    def __worker_main(self, cache_path, config):
         """
         The entry point for worker threads. Pulls work from the queue as it
         becomes available.
 
         Args:
-            comm the communicator for this thread
+            cache_path the path to the local cache directory
+            config     the configuration necessary to construct a communicator
         """
+
+        comm = remote.CachedCommunicator(cache_path, create_communicator(config))
 
         # once any thread throws an exception, stop processing work
         while self.__last_exception is None:
