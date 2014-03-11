@@ -20,39 +20,58 @@ def create_communicator(config):
 
     return comm_module.Communicator(config)
 
-def worker_main(queue, comm, manager):
-    while manager.last_exception is None:
-        work = queue.get()
-        try:
-            log.info("worker processing item")
-            work["func"](comm, *work["args"])
-        except Exception as e:
-            manager.last_exception = (str(e), traceback.format_exc())
-        finally:
-            queue.task_done()
+THREAD_COUNT = 6    # based on the number of concurrent connections from Chrome
 
 class AsyncCommunicator:
     """Wrapper around the Communicator classes provided by adapters that distributes work across multiple threads."""
 
     def __init__(self, cache_path, config):
-        self.last_exception = None
-        self.__queue = Queue.Queue()
+        # tracks exceptions thrown from worker threads
+        self.__last_exception = None
 
-        for x in range(4):
+        # work queue for worker threads
+        self.__queue = Queue.Queue(1)   # maxsize 1 prevents callers from getting to far ahead
+
+        # start all worker threads
+        for x in range(THREAD_COUNT):
             comm = remote.CachedCommunicator(cache_path, create_communicator(config))
-            t = threading.Thread(target=worker_main, args=(self.__queue, comm, self))
+            t = threading.Thread(target=AsyncCommunicator.__worker_main, args=(self, comm))
             t.daemon = True
             t.start()
 
+    def __worker_main(self, comm):
+        """
+        The entry point for worker threads. Pulls work from the queue as it
+        becomes available.
+
+        Args:
+            comm the communicator for this thread
+        """
+
+        # once any thread throws an exception, stop processing work
+        while self.__last_exception is None:
+            work = self.__queue.get()   # wait on the next task
+            try:
+                work["func"](comm, *work["args"])
+            except Exception as e:
+                self.__last_exception = (str(e), traceback.format_exc())
+            finally:
+                self.__queue.task_done()
+
     def __checked(f):
+        """
+        Decorates a method to check for exceptions before and after
+        execution, logging an error if found.
+        """
+
         def result(self, *args):
-            if self.last_exception is not None:
-                log.error(*self.last_exception)
+            if self.__last_exception is not None:
+                log.error(*self.__last_exception)
 
             f(self, *args)
 
-            if self.last_exception is not None:
-                log.error(*self.last_exception)
+            if self.__last_exception is not None:
+                log.error(*self.__last_exception)
         return result
 
     @__checked
@@ -65,5 +84,9 @@ class AsyncCommunicator:
 
     @__checked
     def join(self):
+        """
+        Blocks until all asynchronous get and put operations have finished.
+        """
+
         log.info("waiting for work to complete")
         self.__queue.join()
