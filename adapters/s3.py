@@ -13,7 +13,14 @@ template = {
 }
 
 class Communicator:
-    def __init__(self, config):
+    def __init__(self, config, key_class=None):
+        """
+        Initialize the communicator
+
+        Args:
+            config: the configuration specified in the manifest file
+            key_class: if specified, set as the key factory of the boto Bucket object
+        """
         try:
             # grab the configuration values to catch missing config early
             self.__id = config['id']
@@ -23,6 +30,7 @@ class Communicator:
         except KeyError as e:
             raise Exception("missing required configuration: " + str(e))
 
+        self.__key_class = key_class
         self.__encrypt = config.get('encrypt', False)
         self.__rr = config.get('reduced_redundancy', False)
 
@@ -32,6 +40,8 @@ class Communicator:
             # uses HTTPS by default
             conn = boto.connect_s3(self.__id, self.__secret)
             self.__bucket_conn = conn.get_bucket(self.__bucket_name)
+            if self.__key_class is not None:
+                self.__bucket_conn.key_class = self.__key_class
         return self.__bucket_conn
 
     def get(self, hash, dest):
