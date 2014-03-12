@@ -100,7 +100,7 @@ class FileMapping:
         parts = self.__path_components(path)
         value = self.__get(parts)
         if value is None:
-            warning("path is not tracked: " + path)
+            log.warning("path is not tracked: " + path)
             return []
 
         # paths in "parts" are relative to the repo root, but we want absolute paths

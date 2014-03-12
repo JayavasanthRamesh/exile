@@ -38,8 +38,12 @@ class CachedCommunicator:
             raise RuntimeError("stray non-file object in cache, please remove: " + cached)
 
         dir = os.path.dirname(dest)
-        if dir and not os.path.exists(dir):
-            os.makedirs(os.path.dirname(dest))
+        if dir:
+            # create if it doesn't exist
+            try:
+                os.makedirs(os.path.dirname(dest))
+            except OSError:
+                pass
         shutil.copy(cached, dest)
 
     def put(self, source, hash):
