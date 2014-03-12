@@ -8,7 +8,8 @@ template = {
     "id": "<Access Key ID>",
     "secret": "<Secret Access Key>",
     "bucket": "mybucket",
-    "encrypt": False
+    "encrypt": False,
+    "reduced_redundancy": False
 }
 
 class Communicator:
@@ -23,6 +24,7 @@ class Communicator:
             raise Exception("missing required configuration: " + str(e))
 
         self.__encrypt = config.get('encrypt', False)
+        self.__rr = config.get('reduced_redundancy', False)
 
     def __bucket(self):
         """Lazily creates the S3 connection, which is then reused for future requests."""
@@ -40,4 +42,4 @@ class Communicator:
         shutil.move(tmp, dest)
 
     def put(self, source, hash):
-        self.__bucket().new_key(hash).set_contents_from_filename(source, encrypt_key=self.__encrypt)
+        self.__bucket().new_key(hash).set_contents_from_filename(source, encrypt_key=self.__encrypt, reduced_redundancy=self.__rr)
