@@ -45,7 +45,10 @@ class Communicator:
         return self.__bucket_conn
 
     def get(self, hash, dest):
-        key = self.__bucket().new_key(hash)
+        key = self.__bucket().get_key(hash)
+        if key is None:
+            raise RuntimeError("no such key: " + hash) 
+
         tmpfd, tmp = tempfile.mkstemp()
         with os.fdopen(tmpfd, 'wb') as file:
             key.get_contents_to_file(file)
