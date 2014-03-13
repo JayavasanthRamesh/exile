@@ -10,7 +10,7 @@ import shutil
 import sys
 
 MANIFEST_NAME = "exile.manifest"
-CACHE_DIR = ".exile.cache"
+CACHE_DIR = "exile.cache"
 
 def hash(path):
     """Compute the SHA1 hash of a file"""
@@ -32,6 +32,35 @@ def find_config():
         curr = next
 
     return os.path.join(curr, MANIFEST_NAME)
+
+def find_cache(root, config):
+    """
+    Determines the approriate location for the local object cache
+
+    Args:
+        root: the path to the directory containing the config file
+        config: the parsed configuration
+    """
+
+    cache_path = config['remote'].get('cache', None)
+    # if no user-specified directory, find a reasonable place
+    if cache_path is None:
+        # default to the directory of the manifest
+        cache_path = os.path.join(root, "." + CACHE_DIR)
+        try:
+            # on systems with conventions around temp directories, try those
+            if os.name == 'posix':
+                cache_path = os.path.join(os.environ['TMPDIR'], CACHE_DIR)
+            elif sys.platform == 'win32':
+                cache_path = os.path.join(os.environ['TEMP'], CACHE_DIR)
+        except KeyError:
+            pass
+    else:
+        # resolves any relative paths against the root
+        if not os.path.isabs(cache_path):
+            cache_path = os.path.realpath(os.path.join(root, cache_path))
+
+    return cache_path
 
 def init(type):
     """
@@ -92,7 +121,7 @@ try:
         config = json.load(file)
 
     # compute location of cache and create communicator
-    cache_path = os.path.join(os.path.dirname(config_path), CACHE_DIR)
+    cache_path = find_cache(os.path.dirname(config_path), config)
     comm = exile.worker.AsyncCommunicator(cache_path, config['remote'])
 except Exception as e:
     exile.log.error(str(e))

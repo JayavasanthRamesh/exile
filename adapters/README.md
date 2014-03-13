@@ -72,10 +72,11 @@ simple manifest:
         "files": {}
     }
 
-Here we only care about the "remote" section. The only key that exile knows
-about is "type", which tells us which module to use for communication. The
-rest of the dictionary can be arbitrary key-value pairs that are then made
-available to the communicator in its constructor.
+Here we only care about the "remote" section. The only keys that exile knows
+about are "type", which tells us which module to use for communication, and
+"cache" which specifies the directory in which the local object cache should
+live. The rest of the dictionary can be arbitrary key-value pairs that are then
+made available to the communicator in its constructor.
 
 In this case, the "local" communicator only needs a path to the repository
 location, so we only have one other key. When we create the communicator, 
