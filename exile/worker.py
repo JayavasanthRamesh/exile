@@ -91,3 +91,6 @@ class AsyncCommunicator:
         log.info("waiting for work to complete")
         self.__queue.join()
         self.__check_error()
+
+        with remote.snapshot_lock:
+            remote.snapshot.write()

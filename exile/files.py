@@ -4,14 +4,16 @@ import os
 class FileMapping:
     """Provides convenience methods for accessing and manipulating the JSON config object."""
 
-    def __init__(self, root, config):
+    def __init__(self, root, config, silent=False):
         """
         Args:
-            root: the path to the config file; the root of the exile context
+            root: the directory containing the config file; the root of the exile context
             config: the parsed representation of the file configuration
+            silent: if true, no messages will be printed
         """
         self.__root = root
         self.__config = config
+        self.__silent = silent
 
     def __path_components(self, path):
         """
@@ -28,7 +30,8 @@ class FileMapping:
 
         path = os.path.realpath(path)
         if not path.startswith(self.__root):
-            log.info("skipping path outside manifest scope: " + path)
+            if not self.__silent:
+                log.info("skipping path outside manifest scope: " + path)
             return None
 
         relative = os.path.relpath(path, self.__root)
@@ -100,7 +103,8 @@ class FileMapping:
         parts = self.__path_components(path)
         value = self.__get(parts)
         if value is None:
-            log.warning("path is not tracked: " + path)
+            if not self.__silent:
+                log.warning("path is not tracked: " + path)
             return []
 
         # paths in "parts" are relative to the repo root, but we want absolute paths
@@ -128,7 +132,7 @@ class FileMapping:
                     dict[parts[i]] = hash
                     changed = True
                 
-                if changed:
+                if changed and not self.__silent:
                     log.message("adding: " + os.path.join(*parts))
 
                 return changed
