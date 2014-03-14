@@ -93,4 +93,5 @@ class AsyncCommunicator:
         self.__check_error()
 
         with remote.snapshot_lock:
-            remote.snapshot.write()
+            if remote.snapshot is not None:
+                remote.snapshot.write()
