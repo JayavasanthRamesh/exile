@@ -43,7 +43,17 @@ class Snapshot:
 class CachedCommunicator:
     """Wrapper around the Communicator classes provided by adapters, but maintains a local cache."""
 
-    def __init__(self, root, cache_path, communicator):
+    def __init__(self, root, cache_path, force, communicator):
+        """
+        Initialize the communicator.
+
+        Args:
+            root: the root of the repository
+            cache_path: the path to the cache directory
+            force: if true, always resolve files even if the snapshot shows them up-to-date
+            communicator: the communicator to wrap
+        """
+
         global snapshot, snapshot_lock
 
         if os.path.exists(cache_path) and not os.path.isdir(cache_path):
@@ -56,6 +66,7 @@ class CachedCommunicator:
             pass
 
         self.__cache = cache_path
+        self.__force = force
         self.__comm = communicator
         
         with snapshot_lock:
@@ -72,17 +83,18 @@ class CachedCommunicator:
         """
         global snapshot, snapshot_lock
 
-        try:
-            # if the target hasn't been modified since the last snapshot
-            if os.path.getmtime(dest) <= snapshot.getmtime():
-                # and the new hash is the same as the one in the snapshot
-                with snapshot_lock:
-                    if snapshot.get(dest) == hash:
-                        # nothing to do
-                        return
-        except OSError:
-            # if we have no snapshot or dest doesn't exist, we can't optimize
-            pass
+        if not self.__force:
+            try:
+                # if the target hasn't been modified since the last snapshot
+                if os.path.getmtime(dest) <= snapshot.getmtime():
+                    # and the new hash is the same as the one in the snapshot
+                    with snapshot_lock:
+                        if snapshot.get(dest) == hash:
+                            # nothing to do
+                            return
+            except OSError:
+                # if we have no snapshot or dest doesn't exist, we can't optimize
+                pass
 
         cached = os.path.join(self.__cache, hash)
 

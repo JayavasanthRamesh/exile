@@ -102,8 +102,10 @@ arg_parser.add_argument("action", choices=['resolve', 'add', 'clean', 'init'],
                         help="the action to perform\n  init    create a new manifest in the current directory\n  resolve copy paths from the repository\n  add     add new paths to the repository\n  clean   delete locally cached objects")
 arg_parser.add_argument("paths", nargs='*',
                         help="the paths to which the action applies")
+arg_parser.add_argument("-f", "--force", action='store_true',
+                        help="[resolve] forces resolution of all matching files, even if exile thinks they are already up-to-date")
 arg_parser.add_argument("-t", "--type",
-                        help="when used with 'init', specifies the type of remote to configure")
+                        help="[init] specifies the type of remote to configure")
 arg_parser.add_argument("-v", "--verbosity", type=int, default=2,
                         help="the amount of informational output to produce\n  0: only errors\n  1: + normal output\n  2: + warnings (default)\n  3: + informational notes")
 args = arg_parser.parse_args()
@@ -122,7 +124,7 @@ try:
 
     # compute location of cache and create communicator
     cache_path = find_cache(os.path.dirname(config_path), config)
-    comm = exile.worker.AsyncCommunicator(os.path.dirname(config_path), cache_path, config['remote'])
+    comm = exile.worker.AsyncCommunicator(os.path.dirname(config_path), cache_path, config['remote'], args.force)
 except Exception as e:
     exile.log.error(str(e))
 

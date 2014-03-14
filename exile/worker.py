@@ -25,7 +25,7 @@ THREAD_COUNT = 6    # based on the number of concurrent connections from Chrome
 class AsyncCommunicator:
     """Wrapper around the Communicator classes provided by adapters that distributes work across multiple threads."""
 
-    def __init__(self, root, cache_path, config):
+    def __init__(self, root, cache_path, config, force):
         # tracks exceptions thrown from worker threads
         self.__last_exception = None
 
@@ -34,11 +34,11 @@ class AsyncCommunicator:
 
         # start all worker threads
         for x in range(THREAD_COUNT):
-            t = threading.Thread(target=AsyncCommunicator.__worker_main, args=(self, root, cache_path, config))
+            t = threading.Thread(target=AsyncCommunicator.__worker_main, args=(self, root, cache_path, config, force))
             t.daemon = True
             t.start()
 
-    def __worker_main(self, root, cache_path, config):
+    def __worker_main(self, root, cache_path, config, force):
         """
         The entry point for worker threads. Pulls work from the queue as it
         becomes available.
@@ -47,9 +47,10 @@ class AsyncCommunicator:
             root: the directory containing the config file
             cache_path: the path to the local cache directory
             config: the configuration necessary to construct a communicator
+            force: if true, configure the communcator to force updates
         """
 
-        comm = remote.CachedCommunicator(root, cache_path, create_communicator(config))
+        comm = remote.CachedCommunicator(root, cache_path, force, create_communicator(config))
 
         # once any thread throws an exception, stop processing work
         while self.__last_exception is None:
