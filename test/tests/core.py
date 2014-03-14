@@ -69,6 +69,7 @@ class ExileTest(unittest.TestCase):
     _config = {
         'remote': {
             'type': 'local',
+            'cache': '.exile.cache'
         } 
     }
 
