@@ -1,5 +1,7 @@
 from core import *
 
+import hashlib
+
 class AddTest(ExileTest):
     def assertAdded(self, contents):
         hash = hashlib.sha1(contents).hexdigest()
@@ -10,13 +12,13 @@ class AddTest(ExileTest):
         self.assertState(self._files)
 
     def test_all(self):
-        self.exile('add *')
-        for path, contents in self._files.iteritems():
+        self.exile_add(*self._files.keys())
+        for _, contents in self._files.iteritems():
             self.assertAdded(contents)
 
     def test_one(self):
         path, contents = self._files.items()[0]
-        self.exile('add ' + path)
+        self.exile_add(path)
         self.assertAdded(contents)
 
     def test_update(self):
@@ -26,10 +28,10 @@ class AddTest(ExileTest):
 
         # create the file and add it
         create_file(self._dir, path, initial)
-        self.exile('add ' + path)
+        self.exile_add(path)
         self.assertAdded(initial)
 
         # change the contents and add it again (update)
         create_file(self._dir, path, updated)
-        self.exile('add ' + path)
+        self.exile_add(path)
         self.assertAdded(updated)

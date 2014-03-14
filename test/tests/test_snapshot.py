@@ -13,9 +13,16 @@ class SnapshotTest(ExileTest):
             snapshot = json.load(file)
 
         for path, contents in files.iteritems():
+            # split the path into components
+            components = []
+            head, tail = os.path.split(path)
+            while tail:
+                components = [tail] + components
+                head, tail = os.path.split(head)
+
             # make sure the snapshot has the right hash
             value = snapshot
-            for component in path.split('/'):
+            for component in components:
                 value = value[component]
             self.assertEqual(value, hashlib.sha1(contents).hexdigest())
 
@@ -27,20 +34,20 @@ class SnapshotTest(ExileTest):
     def setUp(self):
         self._files = {
             'a': 'a',
-            'dir/b': 'b'
+            os.path.join('dir', 'b'): 'b'
         }
         super(SnapshotTest, self).setUp()
 
 
     def test_add_all(self):
-        self.exile('add *')
+        self.exile_add(*self._files.keys())
         self.assertSnapshot(self._files)
 
     def test_resolve(self):
-        self.exile('add *')
+        self.exile_add(*self._files.keys())
 
         os.remove(SNAPSHOT_PATH)
 
         path, contents = self._files.items()[0]
-        self.exile('resolve ' + path)
+        self.exile_resolve(path)
         self.assertSnapshot( { path: contents } )

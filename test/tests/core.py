@@ -12,8 +12,8 @@ import unittest
 # unset, so the tests will use generated temp directories
 # instead
 if False:
-    TEST_DIR = '/tmp/exile-test'    # location of the exile directory
-    REPO_DIR = '/tmp/exile-repo'    # location of the "remote" repository
+    TEST_DIR = os.path.abspath('/tmp/exile-test')    # location of the exile directory
+    REPO_DIR = os.path.abspath('/tmp/exile-repo')    # location of the "remote" repository
 else:
     TEST_DIR = ''
     REPO_DIR = ''
@@ -25,8 +25,12 @@ def create_file(dir, path, contents):
 
     fullpath = os.path.join(dir, path)
     fulldir = os.path.dirname(fullpath)
-    if fulldir and not os.path.exists(fulldir):
-        os.makedirs(fulldir)
+
+    if fulldir:
+        try:
+            os.makedirs(fulldir)
+        except OSError:
+            pass
 
     with open(fullpath, 'w') as file:
         file.write(contents)
@@ -38,10 +42,18 @@ def get_directory(default):
     If default is a path, the directory is place there. Otherwise, a temporary directory is created
     """
     if default:
-        if os.path.exists(default):
+        # remove existing if present
+        try:
             shutil.rmtree(default)
+        except OSError:
+            pass
 
-        os.makedirs(default)
+        # hack for Windows...
+        try:
+            os.makedirs(default)
+        except WindowsError:
+            pass
+
         return default
     else:
         return tempfile.mkdtemp()
@@ -59,8 +71,8 @@ class ExileTest(unittest.TestCase):
     _files = {
         'a': 'A',
         'b': 'B',
-        'c/d': 'D',
-        'c/e/f': 'F',
+        os.path.join('c', 'd'): 'D',
+        os.path.join('c', 'e', 'f'): 'F',
         'a=b:c': 'complex'
     }
 
@@ -115,10 +127,18 @@ class ExileTest(unittest.TestCase):
     def assertInRepo(self, object):
         self.assertObject(os.path.join(self._repo, object), object)
 
-    def exile(self, args):
-        subprocess.call('python ' + EXILE + ' -v0 ' + args, shell=True)
+    def exile_add(self, *args):
+        self.__exile('add', *args)
+
+    def exile_resolve(self, *args):
+        self.__exile('resolve', *args)
+
+    def __exile(self, *args):
+        subprocess.call(['python', EXILE, '-v0'] + list(args))
 
     def tearDown(self):
+        # make sure we aren't inside the folders we're about to delete
+        os.chdir('/')
         if not TEST_DIR:
             shutil.rmtree(self._dir)
         if not REPO_DIR:
