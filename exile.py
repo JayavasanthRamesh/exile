@@ -122,7 +122,7 @@ try:
 
     # compute location of cache and create communicator
     cache_path = find_cache(os.path.dirname(config_path), config)
-    comm = exile.worker.AsyncCommunicator(cache_path, config['remote'])
+    comm = exile.worker.AsyncCommunicator(os.path.dirname(config_path), cache_path, config['remote'])
 except Exception as e:
     exile.log.error(str(e))
 

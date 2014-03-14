@@ -43,7 +43,7 @@ class Snapshot:
 class CachedCommunicator:
     """Wrapper around the Communicator classes provided by adapters, but maintains a local cache."""
 
-    def __init__(self, cache_path, communicator):
+    def __init__(self, root, cache_path, communicator):
         global snapshot, snapshot_lock
 
         if os.path.exists(cache_path) and not os.path.isdir(cache_path):
@@ -60,7 +60,7 @@ class CachedCommunicator:
         
         with snapshot_lock:
             if snapshot is None:
-                snapshot = Snapshot(os.path.dirname(cache_path))
+                snapshot = Snapshot(root)
 
     def get(self, hash, dest):
         """
