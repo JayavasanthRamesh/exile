@@ -8,6 +8,7 @@ import json
 import os
 import shutil
 import sys
+import time
 
 MANIFEST_NAME = "exile.manifest"
 CACHE_DIR = "exile.cache"
@@ -95,6 +96,34 @@ def init(type):
 
     exile.log.message("Initialized manifest with remote type '%s'" % (args.type))
 
+def cache(args):
+    snapshot_path = os.path.realpath(exile.remote.SNAPSHOT)
+
+    if args.cache_action == 'clean':
+        if args.objects:
+            exile.log.message("Cleaning object cache at " + cache_path)
+            try:
+                shutil.rmtree(cache_path)
+            except OSError:
+                pass
+
+        if args.snapshot:
+            exile.log.message("Cleaning snapshot file " + snapshot_path)
+            try:
+                os.remove(snapshot_path)
+            except OSError:
+                pass
+            
+    elif args.cache_action == 'info':
+        exile.log.message("Object cache: " + cache_path)
+
+        try:
+            exile.log.message("Snapshot file (updated %s): %s" % (time.ctime(os.path.getmtime(snapshot_path)), snapshot_path))
+        except os.error:
+            exile.log.message("No snapshot file")
+
+    sys.exit(0)
+
 
 root_parser = argparse.ArgumentParser(description="Add and resolve files stored in an exile repository.",
                                      formatter_class=argparse.RawTextHelpFormatter)
@@ -116,13 +145,20 @@ init_parser = subparsers.add_parser('init', help='create a new manifest in the c
 init_parser.add_argument("-t", "--type",
                          help="specifies the type of remote to configure")
 
-clean_parser = subparsers.add_parser('clean', help='delete locally cached objects')
+cache_parser = subparsers.add_parser('cache', help='manipulate exile\'s caches')
+cache_subparsers = cache_parser.add_subparsers(dest='cache_action')
+cache_clean_parser = cache_subparsers.add_parser('clean', help='purge all caches (customizeable with options)')
+cache_clean_parser.add_argument("-s", "--snapshot", action='store_true',
+                                help='remove the local snapshot (cache of working tree state)')
+cache_clean_parser.add_argument("-o", "--objects", action='store_true',
+                                help='clean all cached objects (possibly shared by other exile repositories)')
+cache_info_parser = cache_subparsers.add_parser('info', help='display information about the caches')
 
 args = root_parser.parse_args()
 
 exile.log.verbosity = args.verbosity
 
-if args.action == "init":
+if args.action == 'init':
     init(args.type)
     sys.exit(0)
 
@@ -134,6 +170,10 @@ try:
 
     # compute location of cache and create communicator
     cache_path = find_cache(os.path.dirname(config_path), config)
+    
+    if args.action == 'cache':
+        cache(args)
+
     comm = exile.worker.AsyncCommunicator(os.path.dirname(config_path), cache_path, config['remote'], getattr(args, 'force', False))
 except Exception as e:
     exile.log.error(str(e))
@@ -195,12 +235,6 @@ def add(paths):
     # update the manifest file
     with open(config_path, 'w') as file:
         json.dump(config, file, indent=4, sort_keys=True)
-
-def clean(ignored):
-    """Removes locally cached objects."""
-
-    shutil.rmtree(cache_path)
-    exile.log.message("cache cleaned")
 
 try:
     # calls the local function with the same name as the action argument -- "add" calls add(paths)
