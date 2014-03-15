@@ -7,8 +7,8 @@ import remote
 import threading
 import traceback
 
-def create_communicator(config):
-    """Factory for communicator objects based on the configured type."""
+def load_comm_module(config):
+    """Loads the appropriate adapter module based on the configured type."""
 
     type = config['type']
 
@@ -16,9 +16,7 @@ def create_communicator(config):
     me = os.path.dirname(os.path.realpath(__file__))
     parent = os.path.dirname(me)
     file, path, desc = imp.find_module(type, [os.path.join(parent, 'adapters')])
-    comm_module = imp.load_module(type, file, path, desc)
-
-    return comm_module.Communicator(config)
+    return imp.load_module(type, file, path, desc)
 
 THREAD_COUNT = 6    # based on the number of concurrent connections from Chrome
 
@@ -32,13 +30,16 @@ class AsyncCommunicator:
         # work queue for worker threads
         self.__queue = Queue.Queue(1)   # maxsize 1 prevents callers from getting to far ahead
 
+        # load the module here since importing isn't thread-safe
+        comm_module = load_comm_module(config)
+
         # start all worker threads
         for x in range(THREAD_COUNT):
-            t = threading.Thread(target=AsyncCommunicator.__worker_main, args=(self, root, cache_path, config, force))
+            t = threading.Thread(target=AsyncCommunicator.__worker_main, args=(self, root, cache_path, comm_module, config, force))
             t.daemon = True
             t.start()
 
-    def __worker_main(self, root, cache_path, config, force):
+    def __worker_main(self, root, cache_path, comm_module, config, force):
         """
         The entry point for worker threads. Pulls work from the queue as it
         becomes available.
@@ -46,11 +47,12 @@ class AsyncCommunicator:
         Args:
             root: the directory containing the config file
             cache_path: the path to the local cache directory
+            comm_module: the Python module for the configured adapter
             config: the configuration necessary to construct a communicator
             force: if true, configure the communcator to force updates
         """
 
-        comm = remote.CachedCommunicator(root, cache_path, force, create_communicator(config))
+        comm = remote.CachedCommunicator(root, cache_path, force, comm_module.Communicator(config))
 
         # once any thread throws an exception, stop processing work
         while self.__last_exception is None:
