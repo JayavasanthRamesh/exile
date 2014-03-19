@@ -52,7 +52,11 @@ class AsyncCommunicator:
             force: if true, configure the communcator to force updates
         """
 
-        comm = remote.CachedCommunicator(root, cache_path, force, comm_module.Communicator(config))
+        try:
+            comm = remote.CachedCommunicator(root, cache_path, force, comm_module.Communicator(config))
+        except Exception as e:
+            self.__last_exception = (str(e), traceback.format_exc())
+            return
 
         # once any thread throws an exception, stop processing work
         while self.__last_exception is None:
