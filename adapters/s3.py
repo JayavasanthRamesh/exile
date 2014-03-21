@@ -1,7 +1,7 @@
 import boto
+import hashlib
 import os
 import os.path
-import shutil
 import tempfile
 
 template = {
@@ -49,10 +49,29 @@ class Communicator:
         if key is None:
             raise RuntimeError("no such key: " + hash) 
 
-        tmpfd, tmp = tempfile.mkstemp()
-        with os.fdopen(tmpfd, 'wb') as file:
-            key.get_contents_to_file(file)
-        shutil.move(tmp, dest)
+        # check for validity after download, retry once
+        for tries in range(2):
+            tmpfd, tmp = tempfile.mkstemp(dir=os.path.dirname(os.path.realpath(dest)))
+            with os.fdopen(tmpfd, 'wb') as file:
+                key.get_contents_to_file(file)
+
+            with open(tmp, 'rb') as file:
+                success = hash == hashlib.sha1(file.read()).hexdigest()
+
+            if success:
+                try:
+                    os.rename(tmp, dest)
+                except WindowsError as e:
+                    # if dest already exists then another thread beat us to it
+                    if e.winerror == 183:
+                        os.remove(tmp)
+                    else:
+                        raise e
+                return
+            else:
+                os.remove(tmp)
+
+        raise Exception('error: object corrupt: ' + hash)
 
     def put(self, source, hash):
         self.__bucket().new_key(hash).set_contents_from_filename(source, encrypt_key=self.__encrypt, reduced_redundancy=self.__rr)

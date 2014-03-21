@@ -34,11 +34,10 @@ def error(msg, trace=None):
     if verbosity >= 3:
         # generate a traceback if it came from this thread,
         # otherwise the traceback should have been passed
-        tb = traceback.format_exc()
-        if tb != "None\n":
-            print tb
-        else:
+        if trace is not None:
             print trace
+        else:
+            print traceback.format_exc()
     else:
         print "error: " + msg
     sys.exit(1)
