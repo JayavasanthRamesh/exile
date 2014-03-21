@@ -140,6 +140,8 @@ resolve_parser.add_argument("-f", "--force", action='store_true',
 add_parser = subparsers.add_parser('add', help='add new paths to the repository')
 add_parser.add_argument("paths", nargs='*',
                         help="the paths to which the action applies")
+add_parser.add_argument('-p', '--purge', action='store_true',
+                        help='also remove any tracked files that no longer exist under the given paths')
 
 init_parser = subparsers.add_parser('init', help='create a new manifest in the current directory')
 init_parser.add_argument("-t", "--type",
@@ -199,7 +201,7 @@ def resolve(paths):
 
     comm.join()
 
-def add_file(path):
+def add_file(path, removed=None):
     """
     Add a single file. This only changes the parsed configuration, not the file.
 
@@ -207,8 +209,13 @@ def add_file(path):
         path: the path to a file to add (must be a file)
     """
     filehash = hash(path)
-    if filemap.add(path, filehash):
-        comm.put(path, filehash)
+
+    # if we just removed this file and its hash matches, we're just replacing the entry in the map
+    replacing = removed is not None and removed.get(path) == filehash
+
+    if filemap.add(path, filehash, replacing):
+        if not replacing:
+            comm.put(path, filehash)
 
 def add(paths):
     """
@@ -222,9 +229,15 @@ def add(paths):
     for path in paths:
         if os.path.exists(path):
             if os.path.isdir(path):
+                if args.purge:
+                    exile.log.message("purging: " + path)
+                    removed = filemap.remove(path)
+                else:
+                    removed = None
+
                 for root, dirs, files in os.walk(path):
                     for file in files:
-                        add_file(os.path.join(root, file))
+                        add_file(os.path.join(root, file), removed)
             elif os.path.isfile(path):
                 add_file(path)
         else:

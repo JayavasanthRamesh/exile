@@ -111,13 +111,14 @@ class FileMapping:
         absolute = os.path.realpath(os.path.join(os.path.relpath(self.__root), *parts))
         return self.__paths(absolute, value)
 
-    def add(self, path, hash):
+    def add(self, path, hash, silent=False):
         """
         Add the given path to the configuration.
 
         Args:
             path: the path to the file to add
             hash: the hash of the file
+            silent: if True, this operation will not emit any messages
         """
 
         parts = self.__path_components(path)
@@ -132,7 +133,7 @@ class FileMapping:
                     dict[parts[i]] = hash
                     changed = True
                 
-                if changed and not self.__silent:
+                if changed and not (self.__silent or silent):
                     log.message("adding: " + os.path.join(*parts))
 
                 return changed
@@ -144,3 +145,48 @@ class FileMapping:
             dict = dict[parts[i]]
 
         return False    # shouldn't get here
+
+    def remove(self, path):
+        """
+        Remove all tracked files under a given path and return a FileMapping containing the removed elements.
+
+        For example given the following files (relative to the root for simplicity):
+        a
+        b/c/d
+        b/c/e
+        b/f
+
+        Calling remove with path = 'b/c' would return a mapping containing:
+        {
+            "b": {
+                "c": {
+                    "d": "<somehash>",
+                    "e": "<somehash>"
+                }
+            }
+        }
+
+        Args:
+            path: the path to recursively remove
+        """
+
+        parts = self.__path_components(path)
+        if len(parts) > 0:
+            removed = {}
+            current = removed
+            for part in parts[:-1]:
+                current[part] = {}
+                current = current[part]
+
+            parent = self.__get(parts[:-1])
+            last_part = parts[-1]
+            try:
+                leaf = parent[last_part]
+            except KeyError:
+                return None   # if its already missing, no problem
+            current[last_part] = leaf
+            del parent[last_part]
+
+            return FileMapping(self.__root, removed, True)
+
+        return None
