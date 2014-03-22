@@ -48,11 +48,7 @@ def get_directory(default):
         except OSError:
             pass
 
-        # hack for Windows...
-        try:
-            os.makedirs(default)
-        except WindowsError:
-            pass
+        os.makedirs(default)
 
         return default
     else:
@@ -127,11 +123,36 @@ class ExileTest(unittest.TestCase):
     def assertInRepo(self, object):
         self.assertObject(os.path.join(self._repo, object), object)
 
+    def assertContents(self, path, contents):
+        fullpath = os.path.join(self._dir, path)
+        self.assertFile(fullpath, path)
+        with open(fullpath, 'r') as file:
+            self.assertEqual(file.read(), contents)
+
+    def assertResolved(self, path, contents):
+        self.assertContents(path, contents)
+        self.assertInCache(hashlib.sha1(contents).hexdigest())
+
     def exile_add(self, *args):
         self.__exile('add', *args)
 
     def exile_resolve(self, *args):
         self.__exile('resolve', *args)
+
+    def clearRepo(self):
+        for file in os.listdir(self._repo):
+            os.remove(os.path.join(self._repo, file))
+
+    def clearWorkspace(self):
+        for file in os.listdir(self._dir):
+            if file == 'exile.manifest':
+                continue
+
+            full = os.path.join(self._dir, file)
+            if os.path.isfile(full):
+                os.remove(full)
+            elif os.path.isdir(full):
+                shutil.rmtree(full)
 
     def __exile(self, *args):
         subprocess.call(['python', EXILE, '-v0'] + list(args))

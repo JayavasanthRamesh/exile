@@ -38,16 +38,46 @@ class SnapshotTest(ExileTest):
         }
         super(SnapshotTest, self).setUp()
 
+        self.exile_add(*self._files.keys())
 
     def test_add_all(self):
-        self.exile_add(*self._files.keys())
         self.assertSnapshot(self._files)
 
     def test_resolve(self):
-        self.exile_add(*self._files.keys())
-
         os.remove(SNAPSHOT_PATH)
 
         path, contents = self._files.items()[0]
         self.exile_resolve(path)
         self.assertSnapshot( { path: contents } )
+
+    def test_no_change(self):
+        path, contents = self._files.items()[0]
+
+        # resolve to generate a snapshot
+        self.exile_resolve(path)
+        self.assertResolved(path, contents)
+        before = os.path.getmtime(path)
+
+        # resolve again, should not touch file
+        self.exile_resolve(path)
+        self.assertResolved(path, contents)
+        self.assertEqual(before, os.path.getmtime(path))
+
+    def test_changed(self):
+        path, contents = self._files.items()[0]
+
+        # resolve to generate a snapshot
+        self.exile_resolve(path)
+        self.assertResolved(path, contents)
+        before = os.path.getmtime(path)
+
+        # overwrite file with new contents
+        newcontents = 'newcontents'
+        with open(path, 'w') as file:
+            file.write(newcontents)
+        self.assertContents(path, newcontents)
+
+        # resolve again, should overwrite the file
+        self.exile_resolve(path)
+        self.assertResolved(path, contents)
+        self.assertLess(before, os.path.getmtime(path))
