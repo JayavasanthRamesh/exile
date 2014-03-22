@@ -59,7 +59,7 @@ Pull files from the remote repository into your local workspace. If the necessar
 
 ### cache
 
-`exile` maintains two types of caches: a local object cache and a workspace "snapshot". The  of all objects moving to and from the remote repository in order to prevent unnecessary network requests when switching between versions. The `cache` command provides some functionality for cleaning and inspecting these caches.
+`exile` maintains two types of caches: a local object cache and a workspace "snapshot". The object cache contains copies of all objects moving to and from the remote repository in order to prevent unnecessary network requests when switching between versions. The snapshot keeps track of the versions of files that you have resolved locally to prevent unnecessary file copies during recursive `resolve` operations (you can override this optimization with `resolve -f`). The `cache` command provides some functionality for cleaning and inspecting these caches.
 
 Backstory
 ---------
