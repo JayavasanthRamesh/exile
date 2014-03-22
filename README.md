@@ -57,9 +57,9 @@ Multiple paths can be specified, and directories will be added recursively.
 
 Pull files from the remote repository into your local workspace. If the necessary files are not present in your local cache, they will be pulled from the remote. Syntax is similar to `add`.
 
-### clean
+### cache
 
-`exile` maintains a local cache of all objects moving to and from the remote repository in order to prevent unnecessary network requests when switching between versions. This cache lives in the `.exile.cache` directory in the same location as your manifest file. The `clean` command is just a convenient way to clear this cache.
+`exile` maintains two types of caches: a local object cache and a workspace "snapshot". The  of all objects moving to and from the remote repository in order to prevent unnecessary network requests when switching between versions. The `cache` command provides some functionality for cleaning and inspecting these caches.
 
 Backstory
 ---------
