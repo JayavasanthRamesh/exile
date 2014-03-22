@@ -1,3 +1,4 @@
+import copy
 import imp
 import log
 import multiprocessing
@@ -35,7 +36,7 @@ class AsyncCommunicator:
 
         # start all worker threads
         for x in range(THREAD_COUNT):
-            t = threading.Thread(target=AsyncCommunicator.__worker_main, args=(self, root, cache_path, comm_module, config, force))
+            t = threading.Thread(target=AsyncCommunicator.__worker_main, args=(self, root, cache_path, comm_module, copy.deepcopy(config), force))
             t.daemon = True
             t.start()
 
