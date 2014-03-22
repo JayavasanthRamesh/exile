@@ -96,8 +96,8 @@ def init(type):
 
     exile.log.message("Initialized manifest with remote type '%s'" % (args.type))
 
-def cache(args):
-    snapshot_path = os.path.realpath(exile.remote.SNAPSHOT)
+def cache(args, root):
+    snapshot_path = os.path.realpath(os.path.join(root, exile.remote.SNAPSHOT))
 
     if args.cache_action == 'clean':
         if args.objects:
@@ -171,10 +171,11 @@ try:
         config = json.load(file)
 
     # compute location of cache and create communicator
-    cache_path = find_cache(os.path.dirname(config_path), config)
-    
+    root_path = os.path.dirname(config_path)
+    cache_path = find_cache(root_path, config)
+
     if args.action == 'cache':
-        cache(args)
+        cache(args, root_path)
 
     comm = exile.worker.AsyncCommunicator(os.path.dirname(config_path), cache_path, config['remote'], getattr(args, 'force', False))
 except Exception as e:
@@ -184,7 +185,7 @@ except Exception as e:
 if 'files' not in config:
     config['files'] = {}
 
-filemap = exile.files.FileMapping(os.path.dirname(config_path), config['files'])
+filemap = exile.files.FileMapping(root_path, config['files'])
 
 def resolve(paths):
     """
