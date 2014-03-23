@@ -1,1 +1,0 @@
- - Stop slurping files when computing hashes, use hashlib's update()

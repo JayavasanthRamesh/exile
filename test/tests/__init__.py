@@ -3,3 +3,4 @@ from test_add import PurgeTest
 from test_resolve import BasicResolveTest
 from test_resolve import SubDirResolveTest
 from test_snapshot import SnapshotTest
+from test_unit import TestHash

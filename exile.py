@@ -13,12 +13,6 @@ import time
 MANIFEST_NAME = "exile.manifest"
 CACHE_DIR = "exile.cache"
 
-def hash(path):
-    """Compute the SHA1 hash of a file"""
-
-    with open(path, 'r') as file:
-        return hashlib.sha1(file.read()).hexdigest()
-
 def find_config():
     """Looks for a config file at or above the current directory."""
 
@@ -209,7 +203,7 @@ def add_file(path, removed=None):
     Args:
         path: the path to a file to add (must be a file)
     """
-    filehash = hash(path)
+    filehash = exile.hash(path)
 
     # if we just removed this file and its hash matches, we're just replacing the entry in the map
     replacing = removed is not None and removed.get(path) == filehash

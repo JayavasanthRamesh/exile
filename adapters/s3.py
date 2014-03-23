@@ -12,6 +12,17 @@ template = {
     "reduced_redundancy": False
 }
 
+def compute_hash(path):
+    """Compute the SHA1 hash of a file"""
+
+    with open(path, 'rb') as file:
+        h = hashlib.sha1()
+
+        for block in iter(lambda: file.read(65536), ''):
+            h.update(block)
+
+        return h.hexdigest()
+
 class Communicator:
     def __init__(self, config, key_class=None):
         """
@@ -55,10 +66,7 @@ class Communicator:
             with os.fdopen(tmpfd, 'wb') as file:
                 key.get_contents_to_file(file)
 
-            with open(tmp, 'rb') as file:
-                success = hash == hashlib.sha1(file.read()).hexdigest()
-
-            if success:
+            if hash == compute_hash(tmp):
                 try:
                     os.rename(tmp, dest)
                 except WindowsError as e:
