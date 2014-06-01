@@ -3,6 +3,7 @@ from core import *
 import hashlib
 import json
 import os
+import time
 
 # relative to repo root
 SNAPSHOT_PATH = '.exile.snapshot'
@@ -51,6 +52,7 @@ class SnapshotTest(ExileTest):
         self.assertSnapshot( { path: contents } )
 
     def test_no_change(self):
+        os.remove(SNAPSHOT_PATH)
         path, contents = self._files.items()[0]
 
         # resolve to generate a snapshot
@@ -64,12 +66,16 @@ class SnapshotTest(ExileTest):
         self.assertEqual(before, os.path.getmtime(path))
 
     def test_changed(self):
+        os.remove(SNAPSHOT_PATH)
         path, contents = self._files.items()[0]
 
         # resolve to generate a snapshot
         self.exile_resolve(path)
         self.assertResolved(path, contents)
         before = os.path.getmtime(path)
+
+        # let time pass so that our modification is clearly after the snapshot time
+        time.sleep(1)
 
         # overwrite file with new contents
         newcontents = 'newcontents'
