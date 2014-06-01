@@ -85,7 +85,7 @@ def init(type):
         template['type'] = type
 
     config = { "remote": template }
-    with open('exile.manifest', 'w') as file:
+    with open('exile.manifest', 'wb') as file:
         json.dump(config, file, indent=4, sort_keys=True)
 
     exile.log.message("Initialized manifest with remote type '%s'" % (args.type))
@@ -122,7 +122,7 @@ def cache(args, root):
 root_parser = argparse.ArgumentParser(description="Add and resolve files stored in an exile repository.",
                                      formatter_class=argparse.RawTextHelpFormatter)
 root_parser.add_argument("-v", "--verbosity", type=int, default=2,
-                        help="the amount of informational output to produce\n  0: only errors\n  1: + normal output\n  2: + warnings (default)\n  3: + informational notes")
+                        help="the amount of informational output to produce\n  0: only errors\n  1: + warnings\n  2: + normal output (default)\n  3: + informational notes")
 subparsers = root_parser.add_subparsers(dest='action')
 
 resolve_parser = subparsers.add_parser('resolve', help='copy paths from the repository')
@@ -241,7 +241,7 @@ def add(paths):
     comm.join()
 
     # update the manifest file
-    with open(config_path, 'w') as file:
+    with open(config_path, 'wb') as file:
         json.dump(config, file, indent=4, sort_keys=True)
 
 try:

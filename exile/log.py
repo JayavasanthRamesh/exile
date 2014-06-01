@@ -22,13 +22,14 @@ def info(msg):
     if verbosity >= 3:
         print "info: " + msg
 
-def warning(msg):
+def message(msg):
     if verbosity >= 2:
+        print msg
+
+def warning(msg):
+    if verbosity >= 1:
         print "warning: " + msg
 
-def message(msg):
-    if verbosity >= 1:
-        print msg
 
 def error(msg, trace=None):
     if verbosity >= 3:

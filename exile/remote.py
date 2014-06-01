@@ -30,14 +30,14 @@ class Snapshot:
         return os.path.getmtime(self.__path)
 
     def add(self, path, hash):
-        return self.__files.add(path, hash)
+        return self.__files.add(path, (hash, os.path.getmtime(path)))
 
     def get(self, path):
         return self.__files.get(path)
 
     def write(self):
         """Writes the current state of the snapshot back to the snapshot file"""
-        with open(self.__path, 'w') as file:
+        with open(self.__path, 'wb') as file:
             json.dump(self.__data, file)#, indent=4, sort_keys=True)
 
 class CachedCommunicator:
@@ -85,13 +85,16 @@ class CachedCommunicator:
 
         if not self.__force:
             try:
-                # if the target hasn't been modified since the last snapshot
-                if os.path.getmtime(dest) <= snapshot.getmtime():
+                with snapshot_lock:
+                    snapdata = snapshot.get(dest)
+
+                if (snapdata is not None and
+                    # if the target hasn't been modified since the last snapshot
+                    os.path.getmtime(dest) <= snapdata[1] and
                     # and the new hash is the same as the one in the snapshot
-                    with snapshot_lock:
-                        if snapshot.get(dest) == hash:
-                            # nothing to do
-                            return
+                    snapdata[0] == hash):
+                    # then there's nothing to do
+                    return
             except OSError:
                 # if we have no snapshot or dest doesn't exist, we can't optimize
                 pass

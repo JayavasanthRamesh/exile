@@ -25,11 +25,11 @@ class SnapshotTest(ExileTest):
             value = snapshot
             for component in components:
                 value = value[component]
-            self.assertEqual(value, hashlib.sha1(contents).hexdigest())
+            self.assertEqual(value[0], hashlib.sha1(contents).hexdigest())
 
             # make sure the snapshot's mtime is not less than the file's
             file_mtime = os.path.getmtime(path)
-            snapshot_mtime = os.path.getmtime(SNAPSHOT_PATH)
+            snapshot_mtime = value[1]
             self.assertLessEqual(file_mtime, snapshot_mtime)
 
     def setUp(self):
@@ -82,6 +82,33 @@ class SnapshotTest(ExileTest):
         with open(path, 'w') as file:
             file.write(newcontents)
         self.assertContents(path, newcontents)
+
+        # resolve again, should overwrite the file
+        self.exile_resolve(path)
+        self.assertResolved(path, contents)
+        self.assertLess(before, os.path.getmtime(path))
+
+    def test_partial_resolve(self):
+        os.remove(SNAPSHOT_PATH)
+        path, contents = self._files.items()[0]
+
+        # resolve to generate a snapshot
+        self.exile_resolve(path)
+        self.assertResolved(path, contents)
+        before = os.path.getmtime(path)
+
+        # let time pass so that our modification is clearly after the snapshot time
+        time.sleep(1)
+
+        # overwrite file with new contents
+        newcontents = 'newcontents'
+        with open(path, 'w') as file:
+            file.write(newcontents)
+        self.assertContents(path, newcontents)
+
+        # resolve an unrelated file
+        otherpath, _ = self._files.items()[1]
+        self.exile_resolve(otherpath)
 
         # resolve again, should overwrite the file
         self.exile_resolve(path)
