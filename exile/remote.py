@@ -90,7 +90,7 @@ class CachedCommunicator:
 
                 if (snapdata is not None and
                     # if the target hasn't been modified since the last snapshot
-                    os.path.getmtime(dest) <= snapdata[1] and
+                    os.path.getmtime(dest) == snapdata[1] and
                     # and the new hash is the same as the one in the snapshot
                     snapdata[0] == hash):
                     # then there's nothing to do
