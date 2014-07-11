@@ -19,7 +19,7 @@ def load_comm_module(config):
     file, path, desc = imp.find_module(type, [os.path.join(parent, 'adapters')])
     return imp.load_module(type, file, path, desc)
 
-THREAD_COUNT = 6    # based on the number of concurrent connections from Chrome
+THREAD_COUNT = 250   # Windows can support up to 1000 threads for a process . But win 7 x64 supports not more than 300 open files at a time .
 
 class AsyncCommunicator:
     """Wrapper around the Communicator classes provided by adapters that distributes work across multiple threads."""

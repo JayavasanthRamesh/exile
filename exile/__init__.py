@@ -10,7 +10,7 @@ def hash(path):
 
     with open(path, 'rb') as file:
         h = hashlib.sha1()
-
+        h.update(path)
         for block in iter(lambda: file.read(65536), ''):
             h.update(block)
 
